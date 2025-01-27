@@ -80,14 +80,18 @@
             margin-bottom: 5px;
             font-size: 14px;
         }
-        #templateList {
-            max-height: 205px;
+        #itemsDiv {
+            height: 205px;
             overflow-y: auto;
             margin-top: 10px;
             border-top: 1px solid #ccc;
             padding: 4px;
             border: 2px inset #b2b5be;
+            resize: auto;
         }
+         #itemsDiv li {
+            margin-left: 1em;
+         }   
         #progressBar {
             margin: 10px 0;
             height: 20px;
@@ -120,12 +124,12 @@
                 <h4>Restore Settings</h4>
                 <button id="importFile" title="">📂 Import from File</button>
                 <button id="applySettings" title="">⤴️ Apply to TradingView</button>
-                <input type="file" id="importFile" style="display: none;" />
+                <input type="file" id="importFileInput" style="display: none;" />
             </div>
         </div>
         <div id="statusMessage"></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
-        <div id="templateList">
+        <div id="itemsDiv">
             <i style="text-align:center; display: block; padding: 4em;">Click fetch or load a file</i>
         </div>
     `;
@@ -134,8 +138,8 @@
     const toolCheckboxes = document.getElementById('toolCheckboxes');
     const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
-    const templateList = document.getElementById('templateList');
-    const importFileInput = document.getElementById('importFile');
+    const itemsDiv = document.getElementById('itemsDiv');
+    const importFileInput = document.getElementById('importFileInput');
 
     // Create checkboxes for tool types
     TOOL_TYPES.forEach(toolName => {
@@ -166,7 +170,7 @@
         }
 
         try {
-            templateList.innerHTML = '';
+            itemsDiv.innerHTML = '';
             updateProgressBar(-1);
             updateStatusMessage('Fetching templates...');
 
@@ -192,16 +196,17 @@
                     userData.TOOLS[tool][name] = JSON.parse(templateContent.content);
                 }
 
-                // Display fetched tool and templates
-                const toolHeader = document.createElement('div');
-                toolHeader.textContent = `Tool: ${tool}`;
+                // Display tools and templates
+                const toolHeader = document.createElement('h4');
+                toolHeader.textContent = `${tool}`;
                 toolHeader.style.fontWeight = 'bold';
-                templateList.appendChild(toolHeader);
-
+                itemsDiv.appendChild(toolHeader);
+                const ul = document.createElement('ul');
+                itemsDiv.appendChild(ul);
                 for (const name in userData.TOOLS[tool]) {
-                    const templateItem = document.createElement('div');
-                    templateItem.textContent = name;
-                    templateList.appendChild(templateItem);
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    ul.appendChild(li);
                 }
 
                 updateProgressBar(((i + 1) / checkedTools.length) * 100);
@@ -232,13 +237,14 @@
                 const tool = checkedTools[i];
                 const templates = userData.TOOLS[tool];
                 if (templates && Object.keys(templates).length > 0) {
-                    for (const name in templates) {
+                    for (let j = 0; j<templates.length; j++) {
+                        const name = templates[j];
+                        updateStatusMessage(`(${j+1} / ${templates.length}) Applying ${tool} tool template "${name}"...`);
                         const content = templates[name];
                         const formData = new FormData();
                         formData.append('name', name);
                         formData.append('tool', tool);
                         formData.append('content', JSON.stringify(content));
-    
                         await fetch("https://www.tradingview.com/save-drawing-template/", {
                             method: "POST",
                             credentials: "include",
@@ -295,17 +301,19 @@
                 const importedData = JSON.parse(e.target.result);
                 Object.assign(userData, importedData);
 
-                templateList.innerHTML = '';
+                itemsDiv.innerHTML = '';
                 for (const tool in importedData.TOOLS) {
-                    const toolHeader = document.createElement('div');
-                    toolHeader.textContent = `Tool: ${tool}`;
+                    // Display tools and templates
+                    const toolHeader = document.createElement('h5');
+                    toolHeader.textContent = `${tool}`;
                     toolHeader.style.fontWeight = 'bold';
-                    templateList.appendChild(toolHeader);
-
+                    itemsDiv.appendChild(toolHeader);
+                    const ul = document.createElement('ul');
+                    itemsDiv.appendChild(ul);
                     for (const name in importedData.TOOLS[tool]) {
-                        const templateItem = document.createElement('div');
-                        templateItem.textContent = name;
-                        templateList.appendChild(templateItem);
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        ul.appendChild(li);
                     }
                 }
 
