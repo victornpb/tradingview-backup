@@ -155,7 +155,7 @@
                     credentials: "include"
                 });
                 const templateNames = await response.json();
-                toolsData.Tools[tool] = {};
+                toolsData.TOOLS[tool] = {};
 
                 for (const name of templateNames) {
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
@@ -163,7 +163,7 @@
                         credentials: "include"
                     });
                     const templateContent = await templateResponse.json();
-                    toolsData.Tools[tool][name] = JSON.parse(templateContent.content);
+                    toolsData.TOOLS[tool][name] = JSON.parse(templateContent.content);
                 }
 
                 // Display fetched tool and templates
@@ -172,7 +172,7 @@
                 toolHeader.style.fontWeight = 'bold';
                 templateList.appendChild(toolHeader);
 
-                for (const name in toolsData.Tools[tool]) {
+                for (const name in toolsData.TOOLS[tool]) {
                     const templateItem = document.createElement('div');
                     templateItem.textContent = name;
                     templateList.appendChild(templateItem);
@@ -196,7 +196,7 @@
   
       try {
           for (const tool of checkedTools) {
-              const templates = toolsData.Tools[tool];
+              const templates = toolsData.TOOLS[tool];
               if (!templates || Object.keys(templates).length === 0) {
                   alert(`No templates to restore for ${tool}. Fetch or import templates first.`);
                   continue;
@@ -228,11 +228,13 @@
     // Export templates for checked tools
     function exportTemplates() {
         const checkedTools = getCheckedTools();
-        const exportData = {};
+        const exportData = {
+            TOOLS: {},
+        };
 
         for (const tool of checkedTools) {
-            if (toolsData.Tools[tool]) {
-                exportData[tool] = toolsData.Tools[tool];
+            if (toolsData.TOOLS[tool]) {
+                exportData.TOOLS[tool] = toolsData.TOOLS[tool];
             }
         }
 
@@ -241,11 +243,11 @@
             return;
         }
 
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(exportData, null, '\t')], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `tradingview_templates.json`;
+        a.download = `tradingview_backup.json`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -262,13 +264,13 @@
                 Object.assign(toolsData, importedData);
 
                 templateList.innerHTML = '';
-                for (const tool in importedData.Tools) {
+                for (const tool in importedData.TOOLS) {
                     const toolHeader = document.createElement('div');
                     toolHeader.textContent = `Tool: ${tool}`;
                     toolHeader.style.fontWeight = 'bold';
                     templateList.appendChild(toolHeader);
 
-                    for (const name in importedData.Tools[tool]) {
+                    for (const name in importedData.TOOLS[tool]) {
                         const templateItem = document.createElement('div');
                         templateItem.textContent = name;
                         templateList.appendChild(templateItem);
