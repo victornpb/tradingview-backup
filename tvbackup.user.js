@@ -10,6 +10,10 @@
 (function () {
     'use strict';
 
+    const userData = {
+        TOOLS: {},
+    };
+
     const TOOL_TYPES = [
         // Lines
         'LineToolTrendLine', 'LineToolRay', 'LineToolInfoLine', 'LineToolExtended', 'LineToolTrendAngle',
@@ -33,10 +37,6 @@
         'LineToolText', 'LineToolTextAbsolute', 'LineToolTextNote', 'LineToolPriceNote', 'LineToolNote',
         'LineToolTable', 'LineToolCallout', 'LineToolComment', 'LineToolPriceLabel', 'LineToolSignpost'
     ];
-
-    const userData = {
-        TOOLS: {},
-    };
 
     // Add custom styles for the UI
     const styles = `
@@ -91,16 +91,7 @@
         #progressBar {
             margin: 10px 0;
             height: 20px;
-            background: #333;
-            border-radius: 5px;
-            overflow: hidden;
-            position: relative;
-        }
-        #progressBar div {
-            height: 100%;
-            background: #76c7c0;
-            width: 0;
-            transition: width 0.2s ease;
+            width: 100%;
         }
         #statusMessage {
             text-align: center;
@@ -119,21 +110,21 @@
     ui.innerHTML = `
         <h3>Backup Manager</h3>
         <div id="toolCheckboxes"></div>
-        <div id="progressBar"><div></div></div>
-        <div id="statusMessage"></div>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h4>Backup Settings</h4>
-                <button id="fetchTemplates" title="">⤵️ Fetch from TradingView</button>
-                <button id="exportTemplates" title="">💾 Export to File</button>
+                <button id="fetchSettings" title="">⤵️ Fetch from TradingView</button>
+                <button id="exportFile" title="">💾 Export to File</button>
             </div>
             <div>
                 <h4>Restore Settings</h4>
-                <button id="importTemplates" title="">📂 Import from File</button>
-                <button id="restoreTemplates" title="">⤴️ Apply to TradingView</button>
+                <button id="importFile" title="">📂 Import from File</button>
+                <button id="applySettings" title="">⤴️ Apply to TradingView</button>
                 <input type="file" id="importFile" style="display: none;" />
             </div>
         </div>
+        <div id="statusMessage"></div>
+        <progress id="progressBar" value="0" min="0" max="100"></progress>
         <div id="templateList">
             <i style="text-align:center; display: block; padding: 4em;">Click fetch or load a file</i>
         </div>
@@ -141,7 +132,7 @@
     document.body.appendChild(ui);
 
     const toolCheckboxes = document.getElementById('toolCheckboxes');
-    const progressBar = document.getElementById('progressBar').firstElementChild;
+    const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
     const templateList = document.getElementById('templateList');
     const importFileInput = document.getElementById('importFile');
@@ -154,25 +145,20 @@
         toolCheckboxes.appendChild(labelElm);
     });
 
-    // Update progress bar
     function updateProgressBar(percent) {
-        progressBar.style.width = `${percent}%`;
+        if (percent>=0) progressBar.value = percent;
+        else progressBar.removeAttribute('value');
     }
 
-    // Update status message
     function updateStatusMessage(message) {
         statusMessage.textContent = message;
     }
 
-    // Get checked tools
     function getCheckedTools() {
-        return Array.from(toolCheckboxes.querySelectorAll('input[type="checkbox"]:checked')).map(
-            checkbox => checkbox.value
-        );
+        return Array.from(toolCheckboxes.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
     }
 
-    // Fetch templates for checked tools
-    async function fetchTemplates() {
+    async function fetchSettings() {
         const checkedTools = getCheckedTools();
         if (checkedTools.length === 0) {
             alert('Please select at least one tool to fetch.');
@@ -186,6 +172,8 @@
 
             for (let i = 0; i < checkedTools.length; i++) {
                 const tool = checkedTools[i];
+
+                updateStatusMessage(`Fetching ${tool} tool...`);
                 const response = await fetch(`https://www.tradingview.com/drawing-templates/${tool}/`, {
                     method: "GET",
                     credentials: "include"
@@ -193,7 +181,9 @@
                 const templateNames = await response.json();
                 userData.TOOLS[tool] = {};
 
-                for (const name of templateNames) {
+                for (let j = 0; j<templateNames.length; j++) {
+                    const name = templateNames[j];
+                    updateStatusMessage(`(${j+1} / ${templateNames.length}) Fetching ${tool} tool template "${name}"...`);
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
                         method: "GET",
                         credentials: "include"
@@ -219,15 +209,15 @@
                 await new Promise((r) => setTimeout(r, 10));
             }
 
-            updateStatusMessage('Templates fetched successfully!');
+            updateStatusMessage('Settings successfully fetched!');
         } catch (error) {
-            console.error('Error fetching templates:', error);
-            updateStatusMessage('Failed to fetch templates.');
+            console.error('Error fetching data:', error);
+            updateStatusMessage('Failed to fetch data.');
         }
     }
 
-    // Restore templates for checked tools
-    async function restoreTemplates() {
+
+    async function applySettings() {
         const checkedTools = getCheckedTools();
         if (checkedTools.length === 0) {
             alert('Please select at least one tool to restore.');
@@ -241,25 +231,23 @@
             for (let i = 0; i < checkedTools.length; i++) {
                 const tool = checkedTools[i];
                 const templates = userData.TOOLS[tool];
-                if (!templates || Object.keys(templates).length === 0) {
-                    updateStatusMessage(`No templates to restore for ${tool}. Fetch or import templates first.`);
-                    continue;
+                if (templates && Object.keys(templates).length > 0) {
+                    for (const name in templates) {
+                        const content = templates[name];
+                        const formData = new FormData();
+                        formData.append('name', name);
+                        formData.append('tool', tool);
+                        formData.append('content', JSON.stringify(content));
+    
+                        await fetch("https://www.tradingview.com/save-drawing-template/", {
+                            method: "POST",
+                            credentials: "include",
+                            body: formData,
+                        });
+                    }
+                } else { 
+                    updateStatusMessage(`Tool ${tool} has no templates. Skipping...`);
                 }
-
-                for (const name in templates) {
-                    const content = templates[name];
-                    const formData = new FormData();
-                    formData.append('name', name);
-                    formData.append('tool', tool);
-                    formData.append('content', JSON.stringify(content));
-
-                    await fetch("https://www.tradingview.com/save-drawing-template/", {
-                        method: "POST",
-                        credentials: "include",
-                        body: formData,
-                    });
-                }
-
                 updateProgressBar(((i + 1) / checkedTools.length) * 100);
             }
 
@@ -271,8 +259,7 @@
     }
 
 
-    // Export templates for checked tools
-    function exportTemplates() {
+    function exportFile() {
         const checkedTools = getCheckedTools();
         const exportData = {
             TOOLS: {},
@@ -298,8 +285,7 @@
         URL.revokeObjectURL(url);
     }
 
-    // Import templates from a file
-    function importTemplates(event) {
+    function importFile(event) {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -332,10 +318,9 @@
         reader.readAsText(file);
     }
 
-    // Attach event listeners to buttons
-    document.getElementById('fetchTemplates').addEventListener('click', fetchTemplates);
-    document.getElementById('restoreTemplates').addEventListener('click', restoreTemplates);
-    document.getElementById('exportTemplates').addEventListener('click', exportTemplates);
-    document.getElementById('importTemplates').addEventListener('click', () => importFileInput.click());
-    importFileInput.addEventListener('change', importTemplates);
+    document.getElementById('fetchSettings').addEventListener('click', fetchSettings);
+    document.getElementById('applySettings').addEventListener('click', applySettings);
+    document.getElementById('exportFile').addEventListener('click', exportFile);
+    document.getElementById('importFile').addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', importFile);
 })();
