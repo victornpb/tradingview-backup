@@ -34,8 +34,8 @@
         'LineToolTable', 'LineToolCallout', 'LineToolComment', 'LineToolPriceLabel', 'LineToolSignpost'
     ];
 
-    const toolsData = {
-        Tools: {}
+    const userData = {
+        TOOLS: {},
     };
 
     // Add custom styles for the UI
@@ -181,7 +181,7 @@
 
         try {
             templateList.innerHTML = '';
-            updateProgressBar(0);
+            updateProgressBar(-1);
             updateStatusMessage('Fetching templates...');
 
             for (let i = 0; i < checkedTools.length; i++) {
@@ -191,7 +191,7 @@
                     credentials: "include"
                 });
                 const templateNames = await response.json();
-                toolsData.Tools[tool] = {};
+                userData.TOOLS[tool] = {};
 
                 for (const name of templateNames) {
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
@@ -199,7 +199,7 @@
                         credentials: "include"
                     });
                     const templateContent = await templateResponse.json();
-                    toolsData.Tools[tool][name] = JSON.parse(templateContent.content);
+                    userData.TOOLS[tool][name] = JSON.parse(templateContent.content);
                 }
 
                 // Display fetched tool and templates
@@ -208,13 +208,15 @@
                 toolHeader.style.fontWeight = 'bold';
                 templateList.appendChild(toolHeader);
 
-                for (const name in toolsData.Tools[tool]) {
+                for (const name in userData.TOOLS[tool]) {
                     const templateItem = document.createElement('div');
                     templateItem.textContent = name;
                     templateList.appendChild(templateItem);
                 }
 
                 updateProgressBar(((i + 1) / checkedTools.length) * 100);
+
+                await new Promise((r) => setTimeout(r, 10));
             }
 
             updateStatusMessage('Templates fetched successfully!');
@@ -233,14 +235,14 @@
         }
 
         try {
-            updateProgressBar(0);
+            updateProgressBar(-1);
             updateStatusMessage('Restoring templates...');
 
             for (let i = 0; i < checkedTools.length; i++) {
                 const tool = checkedTools[i];
-                const templates = toolsData.Tools[tool];
+                const templates = userData.TOOLS[tool];
                 if (!templates || Object.keys(templates).length === 0) {
-                    alert(`No templates to restore for ${tool}. Fetch or import templates first.`);
+                    updateStatusMessage(`No templates to restore for ${tool}. Fetch or import templates first.`);
                     continue;
                 }
 
@@ -268,7 +270,7 @@
         }
     }
 
-    
+
     // Export templates for checked tools
     function exportTemplates() {
         const checkedTools = getCheckedTools();
@@ -277,8 +279,8 @@
         };
 
         for (const tool of checkedTools) {
-            if (toolsData.TOOLS[tool]) {
-                exportData.TOOLS[tool] = toolsData.TOOLS[tool];
+            if (userData.TOOLS[tool]) {
+                exportData.TOOLS[tool] = userData.TOOLS[tool];
             }
         }
 
@@ -305,7 +307,7 @@
         reader.onload = (e) => {
             try {
                 const importedData = JSON.parse(e.target.result);
-                Object.assign(toolsData, importedData);
+                Object.assign(userData, importedData);
 
                 templateList.innerHTML = '';
                 for (const tool in importedData.TOOLS) {
