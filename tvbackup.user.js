@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TradingView Backup/Restore Manager
 // @namespace    http://tampermonkey.net/
-// @version      1.4
-// @description  Fetch, export, import, and restore TradingView templates
+// @version      1.5
+// @description  Fetch, export, import, and restore TradingView templates with progress indicators
 // @author       Victor
 // @match        https://www.tradingview.com/chart/*
 // ==/UserScript==
@@ -88,6 +88,24 @@
             padding: 4px;
             border: 2px inset #b2b5be;
         }
+        #progressBar {
+            margin: 10px 0;
+            height: 20px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+        #progressBar div {
+            height: 100%;
+            background: #76c7c0;
+            width: 0;
+            transition: width 0.2s ease;
+        }
+        #statusMessage {
+            text-align: center;
+            margin-top: 5px;
+        }
     `;
 
     const styleSheet = document.createElement('style');
@@ -101,6 +119,8 @@
     ui.innerHTML = `
         <h3>Backup Manager</h3>
         <div id="toolCheckboxes"></div>
+        <div id="progressBar"><div></div></div>
+        <div id="statusMessage"></div>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h4>Backup Settings</h4>
@@ -115,12 +135,14 @@
             </div>
         </div>
         <div id="templateList">
-            <i style="text-align:center; display: block; npadding: 4em;">Click fetch or Load a File</i>
+            <i style="text-align:center; display: block; padding: 4em;">Click fetch or load a file</i>
         </div>
     `;
     document.body.appendChild(ui);
 
     const toolCheckboxes = document.getElementById('toolCheckboxes');
+    const progressBar = document.getElementById('progressBar').firstElementChild;
+    const statusMessage = document.getElementById('statusMessage');
     const templateList = document.getElementById('templateList');
     const importFileInput = document.getElementById('importFile');
 
@@ -131,6 +153,16 @@
         labelElm.innerHTML = `<input type="checkbox" value="${toolName}" checked /> ${label}`;
         toolCheckboxes.appendChild(labelElm);
     });
+
+    // Update progress bar
+    function updateProgressBar(percent) {
+        progressBar.style.width = `${percent}%`;
+    }
+
+    // Update status message
+    function updateStatusMessage(message) {
+        statusMessage.textContent = message;
+    }
 
     // Get checked tools
     function getCheckedTools() {
@@ -149,13 +181,17 @@
 
         try {
             templateList.innerHTML = '';
-            for (const tool of checkedTools) {
+            updateProgressBar(0);
+            updateStatusMessage('Fetching templates...');
+
+            for (let i = 0; i < checkedTools.length; i++) {
+                const tool = checkedTools[i];
                 const response = await fetch(`https://www.tradingview.com/drawing-templates/${tool}/`, {
                     method: "GET",
                     credentials: "include"
                 });
                 const templateNames = await response.json();
-                toolsData.TOOLS[tool] = {};
+                toolsData.Tools[tool] = {};
 
                 for (const name of templateNames) {
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
@@ -163,7 +199,7 @@
                         credentials: "include"
                     });
                     const templateContent = await templateResponse.json();
-                    toolsData.TOOLS[tool][name] = JSON.parse(templateContent.content);
+                    toolsData.Tools[tool][name] = JSON.parse(templateContent.content);
                 }
 
                 // Display fetched tool and templates
@@ -172,59 +208,67 @@
                 toolHeader.style.fontWeight = 'bold';
                 templateList.appendChild(toolHeader);
 
-                for (const name in toolsData.TOOLS[tool]) {
+                for (const name in toolsData.Tools[tool]) {
                     const templateItem = document.createElement('div');
                     templateItem.textContent = name;
                     templateList.appendChild(templateItem);
                 }
+
+                updateProgressBar(((i + 1) / checkedTools.length) * 100);
             }
 
-            alert('Templates fetched successfully!');
+            updateStatusMessage('Templates fetched successfully!');
         } catch (error) {
             console.error('Error fetching templates:', error);
-            alert('Failed to fetch templates.');
+            updateStatusMessage('Failed to fetch templates.');
         }
     }
 
     // Restore templates for checked tools
     async function restoreTemplates() {
-      const checkedTools = getCheckedTools();
-      if (checkedTools.length === 0) {
-          alert('Please select at least one tool to restore.');
-          return;
-      }
-  
-      try {
-          for (const tool of checkedTools) {
-              const templates = toolsData.TOOLS[tool];
-              if (!templates || Object.keys(templates).length === 0) {
-                  alert(`No templates to restore for ${tool}. Fetch or import templates first.`);
-                  continue;
-              }
-  
-              for (const name in templates) {
-                  const content = templates[name];
-                  const formData = new FormData();
-                  formData.append('name', name);
-                  formData.append('tool', tool);
-                  formData.append('content', JSON.stringify(content));
-  
-                  await fetch("https://www.tradingview.com/save-drawing-template/", {
-                      method: "POST",
-                      credentials: "include",
-                      body: formData,
-                  });
-              }
-          }
-  
-          alert('Templates restored successfully!');
-      } catch (error) {
-          console.error('Error restoring templates:', error);
-          alert('Failed to restore templates.');
-      }
-  }
+        const checkedTools = getCheckedTools();
+        if (checkedTools.length === 0) {
+            alert('Please select at least one tool to restore.');
+            return;
+        }
 
+        try {
+            updateProgressBar(0);
+            updateStatusMessage('Restoring templates...');
 
+            for (let i = 0; i < checkedTools.length; i++) {
+                const tool = checkedTools[i];
+                const templates = toolsData.Tools[tool];
+                if (!templates || Object.keys(templates).length === 0) {
+                    alert(`No templates to restore for ${tool}. Fetch or import templates first.`);
+                    continue;
+                }
+
+                for (const name in templates) {
+                    const content = templates[name];
+                    const formData = new FormData();
+                    formData.append('name', name);
+                    formData.append('tool', tool);
+                    formData.append('content', JSON.stringify(content));
+
+                    await fetch("https://www.tradingview.com/save-drawing-template/", {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData,
+                    });
+                }
+
+                updateProgressBar(((i + 1) / checkedTools.length) * 100);
+            }
+
+            updateStatusMessage('Templates restored successfully!');
+        } catch (error) {
+            console.error('Error restoring templates:', error);
+            updateStatusMessage('Failed to restore templates.');
+        }
+    }
+
+    
     // Export templates for checked tools
     function exportTemplates() {
         const checkedTools = getCheckedTools();
