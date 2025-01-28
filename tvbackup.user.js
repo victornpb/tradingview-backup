@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TradingView Backup/Restore Manager
-// @namespace    http://tampermonkey.net/
-// @version      1.6
-// @description  Fetch, export, import, and restore TradingView templates and themes with progress indicators
+// @namespace    https://github.com/victornpb/tradingview-backup
+// @version      1.1
+// @description  Backup and Restore your TradingView drawing tool templates and Themes
 // @author       Victor
 // @match        https://www.tradingview.com/chart/*
 // ==/UserScript==
