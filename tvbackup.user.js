@@ -198,8 +198,12 @@
                         method: "GET",
                         credentials: "include"
                     });
-                    const templateContent = await templateResponse.json();
-                    userData.TOOLS[tool][name] = JSON.parse(templateContent.content);
+                    try {
+                        const templateContent = await templateResponse.json();
+                        userData.TOOLS[tool][name] = JSON.parse(templateContent.content);
+                    } catch(err) {
+                        throw `Error parsing ${tool} tool template "${name}"! ` + err;
+                    }
                 }
 
                 // Display tools and templates
