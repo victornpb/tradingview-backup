@@ -42,8 +42,8 @@
     const styles = `
         #backupManagerUI {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 62px;
+            left: 64px;
             background: #1e222d;
             padding: 15px;
             border: 1px solid #363a45;
@@ -51,11 +51,15 @@
             box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
             z-index: 10000;
             width: 500px;
-            color: white;
+            color: #ffffff;
         }
         #backupManagerUI h3 {
+            color: #2962ff;
             margin: 0 0 10px 0;
             font-size: 16px;
+        }
+        #backupManagerUI h2 {
+            margin: 0 0 10px 0;
         }
         #backupManagerUI button {
             display: block;
@@ -68,20 +72,14 @@
             cursor: pointer;
         }
         #backupManagerUI button:hover {
-            background-color: #f0f0f0;
+            background-color: #434651;
         }
-        #toolCheckboxes {
-            max-height: 200px;
-            overflow: auto;
-            margin-bottom: 10px;
-        }
-        #toolCheckboxes label {
+        #itemsDiv label {
             display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
+            font-weight: bold;
         }
         #itemsDiv {
-            height: 205px;
+            height: 405px;
             overflow-y: auto;
             margin-top: 10px;
             border-top: 1px solid #ccc;
@@ -113,29 +111,25 @@
     ui.id = 'backupManagerUI';
     ui.innerHTML = `
         <h3>Backup Manager</h3>
-        <div id="toolCheckboxes"></div>
         <div style="display: flex; justify-content: space-around;">
             <div>
-                <h4>Backup Settings</h4>
-                <button id="fetchSettings" title="">⤵️ Fetch from TradingView</button>
-                <button id="exportFile" title="">💾 Export to File</button>
+                <h2>💾 Backup Settings</h2>
+                <button id="fetchSettings" title="">Fetch from TradingView</button>
+                <button id="exportFile" title="">Export to File</button>
             </div>
             <div>
-                <h4>Restore Settings</h4>
-                <button id="importFile" title="">📂 Import from File</button>
-                <button id="applySettings" title="">⤴️ Apply to TradingView</button>
+                <h2>↩️ Restore Settings</h2>
+                <button id="importFile" title="">Import from File</button>
+                <button id="applySettings" title="">Apply to TradingView</button>
                 <input type="file" id="importFileInput" style="display: none;" />
             </div>
         </div>
         <div id="statusMessage"></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
-        <div id="itemsDiv">
-            <i style="text-align:center; display: block; padding: 4em;">Click fetch or load a file</i>
-        </div>
+        <div id="itemsDiv"></div>
     `;
     document.body.appendChild(ui);
 
-    const toolCheckboxes = document.getElementById('toolCheckboxes');
     const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
     const itemsDiv = document.getElementById('itemsDiv');
@@ -146,7 +140,11 @@
         const labelElm = document.createElement('label');
         const label = toolName.replace('LineTool', '');
         labelElm.innerHTML = `<input type="checkbox" value="${toolName}" checked /> ${label}`;
-        toolCheckboxes.appendChild(labelElm);
+        itemsDiv.appendChild(labelElm);
+
+        const ul = document.createElement('ul');
+        ul.name = toolName;
+        itemsDiv.appendChild(ul);
     });
 
     function updateProgressBar(percent) {
@@ -155,22 +153,21 @@
     }
 
     function updateStatusMessage(message) {
-        statusMessage.textContent = message;
+        statusMessage.innerHTML = message;
     }
 
     function getCheckedTools() {
-        return Array.from(toolCheckboxes.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
+        return Array.from(itemsDiv.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
     }
 
     async function fetchSettings() {
         const checkedTools = getCheckedTools();
         if (checkedTools.length === 0) {
-            alert('Please select at least one tool to fetch.');
+            alert('Please select at least one tool to fetch!');
             return;
         }
 
         try {
-            itemsDiv.innerHTML = '';
             updateProgressBar(-1);
             updateStatusMessage('Fetching templates...');
 
@@ -197,12 +194,8 @@
                 }
 
                 // Display tools and templates
-                const toolHeader = document.createElement('h4');
-                toolHeader.textContent = `${tool}`;
-                toolHeader.style.fontWeight = 'bold';
-                itemsDiv.appendChild(toolHeader);
-                const ul = document.createElement('ul');
-                itemsDiv.appendChild(ul);
+                const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === tool);
+                ul.innerHTML = '';
                 for (const name in userData.TOOLS[tool]) {
                     const li = document.createElement('li');
                     li.textContent = name;
@@ -225,7 +218,7 @@
     async function applySettings() {
         const checkedTools = getCheckedTools();
         if (checkedTools.length === 0) {
-            alert('Please select at least one tool to restore.');
+            alert('Please select at least one tool to restore!');
             return;
         }
 
@@ -301,15 +294,9 @@
                 const importedData = JSON.parse(e.target.result);
                 Object.assign(userData, importedData);
 
-                itemsDiv.innerHTML = '';
                 for (const tool in importedData.TOOLS) {
-                    // Display tools and templates
-                    const toolHeader = document.createElement('h5');
-                    toolHeader.textContent = `${tool}`;
-                    toolHeader.style.fontWeight = 'bold';
-                    itemsDiv.appendChild(toolHeader);
-                    const ul = document.createElement('ul');
-                    itemsDiv.appendChild(ul);
+                    const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === tool);
+                    ul.innerHTML = '';
                     for (const name in importedData.TOOLS[tool]) {
                         const li = document.createElement('li');
                         li.textContent = name;
@@ -317,10 +304,10 @@
                     }
                 }
 
-                alert('Templates imported successfully!\nClick restore to apply the settings to TradingView.');
+                updateStatusMessage('Settings imported successfully!\n Click Apply settings to TradingView.');
             } catch (error) {
                 console.error('Error importing templates:', error);
-                alert('Failed to import templates. Please check the file format.');
+                updateStatusMessage('Failed to import templates. Please check the file format.');
             }
         };
         reader.readAsText(file);
@@ -331,4 +318,5 @@
     document.getElementById('exportFile').addEventListener('click', exportFile);
     document.getElementById('importFile').addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', importFile);
+    updateStatusMessage('<i>Click Fetch or Import a file</i>');
 })();
