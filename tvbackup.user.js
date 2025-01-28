@@ -126,6 +126,10 @@
         </div>
         <div id="statusMessage"></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
+        <div>
+            Select items to backup/restore:
+            <a id="selectAll" href="#">Select All</a> | <a id="unselectAll" href="#">Unselect All</a>
+        </div>
         <div id="itemsDiv"></div>
     `;
     document.body.appendChild(ui);
@@ -401,5 +405,11 @@
     document.getElementById('exportFile').addEventListener('click', exportFile);
     document.getElementById('importFile').addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', importFile);
+    document.getElementById('selectAll').addEventListener('click', () => {
+        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+    });
+    document.getElementById('unselectAll').addEventListener('click', () => {
+        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    });
     updateStatusMessage('<i>Click Fetch or Import a file</i>');
 })();
