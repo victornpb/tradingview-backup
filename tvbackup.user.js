@@ -228,7 +228,7 @@
 
         const checkboxes = await getCheckboxes();
         if (checkboxes.THEMES) {
-            saveThemes();
+            await saveThemes();
         }
 
         const checkedTools = getCheckedTools();
@@ -244,10 +244,11 @@
             for (let i = 0; i < checkedTools.length; i++) {
                 const tool = checkedTools[i];
                 const templates = userData.TOOLS[tool];
-                if (templates && Object.keys(templates).length > 0) {
-                    for (let j = 0; j<templates.length; j++) {
-                        const name = templates[j];
-                        updateStatusMessage(`(${j+1} / ${templates.length}) Applying ${tool} tool template "${name}"...`);
+                const templateKeys = Object.keys(templates || {});
+                if (templateKeys.length > 0) {
+                    for (let j = 0; j<templateKeys.length; j++) {
+                        const name = templateKeys[j];
+                        updateStatusMessage(`(${j+1} / ${templateKeys.length}) Applying ${tool} tool template "${name}"...`);
                         const content = templates[name];
                         const formData = new FormData();
                         formData.append('name', name);
