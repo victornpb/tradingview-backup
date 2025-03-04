@@ -44,14 +44,15 @@
             position: fixed;
             bottom: 62px;
             left: 64px;
-            background: #1e222d;
+            width: 500px;
             padding: 15px;
+            background: #1e222d;
+            color: #ffffff;
             border: 1px solid #363a45;
+            font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif;
             border-radius: 3px;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
             z-index: 10000;
-            width: 500px;
-            color: #ffffff;
         }
         #tvBackupToolUI h3 {
             color: #2962ff;
@@ -66,13 +67,18 @@
             width: 100%;
             margin-bottom: 10px;
             padding: 8px;
-            font-size: 14px;
-            border: none;
+            font-size: 16px;
+            color: #000;
+            background: #fff;
+            border: 1px solid #fff;
             border-radius: 5px;
             cursor: pointer;
         }
         #tvBackupToolUI button:hover {
-            background-color: #434651;
+            background-color: #ddd;
+        }
+        #tvBackupToolUI button:active {
+            background-color: #888;
         }
         #tvBackupToolUI #panel {
             height: 405px;
@@ -82,12 +88,32 @@
             padding: 4px 16px;
             border: 2px inset #b2b5be;
             resize: auto;
-            }
-        #tvBackupToolUI .sectionTitle {
-            font-weight: bold;
-            padding: 8px 0;
+        }
+        
+        #tvBackupToolUI #panel label {
+            display: block;
+            font-weight: normal;
+            font-size: 10pt;
+        }
+        #tvBackupToolUI #panel label:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        #tvBackupToolUI #panel {
+            height: 405px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border-top: 1px solid #ccc;
+            padding: 4px 16px;
+            border: 2px inset #b2b5be;
+            resize: auto;
+        }
+        #tvBackupToolUI #panel .sectionTitle {
             font-size: medium;
+            font-weight: bold;
             color: silver;
+        }
+        #tvBackupToolUI section {
+            padding: 8px;
         }
         #tvBackupToolUI section:empty:after {
             content: 'Empty';
@@ -120,7 +146,7 @@
     const ui = document.createElement('div');
     ui.id = 'tvBackupToolUI';
     ui.innerHTML = `
-        <h3>Backup Tool</h3>
+        <h3>TradingView Backup Tool - <small><a href="https://github.com/victornpb">victor</a></small></h3>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h2>💾 Backup Settings</h2>
@@ -137,7 +163,7 @@
         <div id="statusMessage"></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
         <div>
-            Select templates to backup/restore:
+            Select items to export or restore:
             <a id="selectAll" href="#">Select All</a> | <a id="unselectAll" href="#">Unselect All</a>
         </div>
         <div id="panel"></div>
@@ -166,7 +192,7 @@
         else progressBar.removeAttribute('value');
     }
 
-    function updateStatusMessage(message) {
+    function updateStatus(message) {
         statusMessage.innerHTML = message;
     }
 
@@ -177,12 +203,12 @@
 
     async function fetchSettings() {
 
-        updateStatusMessage('Fetching themes...');
+        updateStatus('Fetching themes...');
         await fetchThemes();
 
         for (let i = 0; i < TOOL_TYPES.length; i++) {
             const tool = TOOL_TYPES[i];
-            updateStatusMessage(`Fetching ${tool} templates...`);
+            updateStatus(`Fetching ${tool} templates...`);
             try {
                 const response = await fetch(`https://www.tradingview.com/drawing-templates/${tool}/`, {
                     method: "GET",
@@ -193,7 +219,7 @@
 
                 for (let j = 0; j < templateNames.length; j++) {
                     const name = templateNames[j];
-                    updateStatusMessage(`(${j+1} / ${templateNames.length}) Fetching ${tool} template "${name}"...`);
+                    updateStatus(`(${j+1} / ${templateNames.length}) Fetching ${tool} template "${name}"...`);
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
                         method: "GET",
                         credentials: "include"
@@ -218,10 +244,10 @@
                 await new Promise((r) => setTimeout(r, 10));
             } catch (error) {
                 console.error('Error fetching data for tool:', tool, error);
-                updateStatusMessage('Failed to fetch data.');
+                updateStatus('Failed to fetch data.');
             }
         }
-        updateStatusMessage('Settings successfully fetched!');
+        updateStatus('Settings successfully fetched!<br>Click Export to save them.');
     }
 
     async function applySettings() {
@@ -238,7 +264,7 @@
         if (templatesByTool["THEMES"] && Object.keys(userData.THEMES).length > 0) {
             for (let i = 0; i < templatesByTool["THEMES"].length; i++) {
                 const theme = templatesByTool["THEMES"][i];
-                updateStatusMessage(`Applying theme "${theme}"...`);
+                updateStatus(`Applying theme "${theme}"...`);
                 const formData = new FormData();
                 formData.append('name', theme);
                 formData.append('content', JSON.stringify(userData.THEMES[theme]));
@@ -259,7 +285,7 @@
 
         try {
             updateProgressBar(-1);
-            updateStatusMessage('Restoring templates...');
+            updateStatus('Restoring templates...');
 
             for (let i = 0; i < toolKeys.length; i++) {
                 const tool = toolKeys[i];
@@ -267,7 +293,7 @@
                 if (templateNames.length > 0) {
                     for (let j = 0; j < templateNames.length; j++) {
                         const name = templateNames[j];
-                        updateStatusMessage(`(${j+1} / ${templateNames.length}) Applying ${tool} template "${name}"...`);
+                        updateStatus(`(${j+1} / ${templateNames.length}) Applying ${tool} template "${name}"...`);
                         const content = userData.TOOLS[tool][name];
                         const formData = new FormData();
                         formData.append('name', name);
@@ -280,21 +306,21 @@
                         });
                     }
                 } else { 
-                    updateStatusMessage(`Tool ${tool} has no selected templates. Skipping...`);
+                    updateStatus(`Tool ${tool} has no selected templates. Skipping...`);
                 }
                 updateProgressBar(((i + 1) / toolKeys.length) * 100);
             }
 
-            updateStatusMessage('Templates restored successfully!');
+            updateStatus('Templates restored successfully!');
         } catch (error) {
             console.error('Error restoring templates:', error);
-            updateStatusMessage('Failed to restore templates.');
+            updateStatus('Failed to restore templates.');
         }
     }
 
     async function fetchThemes() {
         try {
-            updateStatusMessage('Fetching themes...');
+            updateStatus('Fetching themes...');
             const response = await fetch("https://www.tradingview.com/themes/", {
                 method: "GET",
                 credentials: "include"
@@ -306,7 +332,7 @@
             list.innerHTML = '';
 
             for (const theme of themeNames) {
-                updateStatusMessage(`Fetching theme: ${theme}...`);
+                updateStatus(`Fetching theme: ${theme}...`);
                 const themeResponse = await fetch(`https://www.tradingview.com/theme/?themeName=${encodeURIComponent(theme)}`, {
                     method: "GET",
                     credentials: "include"
@@ -319,16 +345,16 @@
                 list.appendChild(item);
             }
 
-            updateStatusMessage('Themes fetched successfully!');
+            updateStatus('Themes fetched successfully!');
         } catch (error) {
             console.error('Error fetching themes:', error);
-            updateStatusMessage('Failed to fetch themes.');
+            updateStatus('Failed to fetch themes.');
         }
     }
 
     function exportFile() {
 
-        let username = '';
+        let username = 'user';
         try {
             username = initData.metaInfo.username;
         } catch(_){}
@@ -362,8 +388,11 @@
             }
         });
 
-        let filename = `tradingview_${username} (${new Date().toISOString()}).backup.json`;
-        filename = filename.replace(/[^a-z0-9-_\.() ]/g,'_').replace(/__/g,'_');
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`;
+        let filename = `TradingView ${username} (${dateStr}).backup.json`;
+        filename = filename.replace(/[^a-z0-9-_\.() ]/gi, '_').replace(/__+/g, '_');
 
         const blob = new Blob([JSON.stringify(exportData, null, '\t')], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -404,10 +433,10 @@
                     }
                 }
 
-                updateStatusMessage('Settings imported successfully!<br>Click Apply settings to TradingView.');
+                updateStatus('Settings imported successfully!<br>Click Apply settings to TradingView.');
             } catch (error) {
                 console.error('Error importing templates:', error);
-                updateStatusMessage('Failed to import templates. Please check the file format.');
+                updateStatus('Failed to import templates. Please check the file format.');
             }
         };
         reader.readAsText(file);
@@ -424,5 +453,5 @@
     document.getElementById('unselectAll').addEventListener('click', () => {
         panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     });
-    updateStatusMessage('<i>Click Fetch or Import a file</i>');
+    updateStatus('<i>Click Fetch or Import a file</i>');
 })();
