@@ -17,7 +17,7 @@ This script allows you to **migrate** your TradingView drawing templates and the
 2. Click **Restore Templates**. The script will automatically restore each drawing template and theme (the first one found in the backup).
 3. Refresh
 
-If your theme isn't taking effect you need to [delete your current layout](https://github.com/user-attachments/assets/35f377d0-7c05-4d3a-a225-798305798d9f)
+If your theme isn't taking effect you need to [delete your current layout](https://github.com/user-attachments/assets/35f377d0-7c05-4d3a-a225-798305798d9f), then refresh
 
 **Done!** 
 
