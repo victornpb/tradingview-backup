@@ -22,13 +22,15 @@ This script allows you to **backup and restore** your TradingView drawing templa
 3. Copy and paste [the script](./tvbackup.user.js) into the **Console** tab and press `Enter`.
 
 ## Usage
-1. Visit any TradingView chart while logged in.
+1. Go to [TradingView](https://www.tradingview.com/chart/) on any chart while logged in.
 2. Make sure your settings are saved and have a name ([Watch this 5s gif](https://github.com/user-attachments/assets/9f15e1d5-91cc-4f1d-ac21-b108b8b79ab9))
 3. Use the Backup Manager UI (bottom-left corner):
    - **Fetch**: Extracts your templates/themes from TradingView.
-   - **Export**: Save them as a JSON file.
-   - **Import**: Load previously saved configurations.
+   - **Export**: Save them as a JSON file so you can keep a copy or share
+     
+   - **Import**: Load previously saved JSON file.
    - **Apply**: Restore templates/themes back to TradingView.
+     After applying refresh your window, go to configuration and select your theme name.
 
 ----
 
