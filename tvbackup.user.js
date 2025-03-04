@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TradingView Backup/Restore Manager
 // @namespace    https://github.com/victornpb/tradingview-backup
-// @version      1.1
-// @description  Backup and Restore your TradingView drawing tool templates and Themes
+// @version      1.2
+// @description  Backup and Restore your TradingView drawing tool templates and Themes with individual template selection
 // @author       Victor
 // @match        https://www.tradingview.com/chart/*
 // ==/UserScript==
@@ -40,7 +40,7 @@
     ];
 
     const styles = `
-        #backupManagerUI {
+        #tvBackupToolUI {
             position: fixed;
             bottom: 62px;
             left: 64px;
@@ -53,15 +53,15 @@
             width: 500px;
             color: #ffffff;
         }
-        #backupManagerUI h3 {
+        #tvBackupToolUI h3 {
             color: #2962ff;
             margin: 0 0 10px 0;
             font-size: 16px;
         }
-        #backupManagerUI h2 {
+        #tvBackupToolUI h2 {
             margin: 0 0 10px 0;
         }
-        #backupManagerUI button {
+        #tvBackupToolUI button {
             display: block;
             width: 100%;
             margin-bottom: 10px;
@@ -71,31 +71,41 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        #backupManagerUI button:hover {
+        #tvBackupToolUI button:hover {
             background-color: #434651;
         }
-        #itemsDiv label {
-            display: block;
-            font-weight: bold;
-        }
-        #itemsDiv {
+        #tvBackupToolUI #panel {
             height: 405px;
             overflow-y: auto;
             margin-top: 10px;
             border-top: 1px solid #ccc;
-            padding: 4px;
+            padding: 4px 16px;
             border: 2px inset #b2b5be;
             resize: auto;
+            }
+        #tvBackupToolUI .sectionTitle {
+            font-weight: bold;
+            padding: 8px 0;
+            font-size: medium;
+            color: silver;
         }
-         #itemsDiv li {
-            margin-left: 32px;
-         }   
-        #progressBar {
+        #tvBackupToolUI section:empty:after {
+            content: 'Empty';
+            opacity: 0.25;
+            display: block;
+            font-style: italic;
+            font-size: 8pt;
+        }
+        #tvBackupToolUI #panel label {
+            display: block;
+            font-weight: regular;
+        }
+        #tvBackupToolUI #progressBar {
             margin: 10px 0;
             height: 20px;
             width: 100%;
         }
-        #statusMessage {
+        #tvBackupToolUI #statusMessage {
             text-align: center;
             margin-top: 5px;
         }
@@ -108,9 +118,9 @@
 
     // Inject UI into the page
     const ui = document.createElement('div');
-    ui.id = 'backupManagerUI';
+    ui.id = 'tvBackupToolUI';
     ui.innerHTML = `
-        <h3>Backup Manager</h3>
+        <h3>Backup Tool</h3>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h2>💾 Backup Settings</h2>
@@ -127,32 +137,32 @@
         <div id="statusMessage"></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
         <div>
-            Select items to backup/restore:
+            Select templates to backup/restore:
             <a id="selectAll" href="#">Select All</a> | <a id="unselectAll" href="#">Unselect All</a>
         </div>
-        <div id="itemsDiv"></div>
+        <div id="panel"></div>
     `;
     document.body.appendChild(ui);
 
     const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
-    const itemsDiv = document.getElementById('itemsDiv');
+    const panel = document.getElementById('panel');
     const importFileInput = document.getElementById('importFileInput');
 
+    // Create sections for THEMES and each tool (as titles with template checkboxes underneath)
     ['THEMES', ...TOOL_TYPES].forEach(toolName => {
-        const labelElm = document.createElement('label');
-        const label = toolName.replace('LineTool', '');
-        labelElm.innerHTML = `<input type="checkbox" value="${toolName}" checked /> ${label}`;
-        itemsDiv.appendChild(labelElm);
+        const titleElm = document.createElement('div');
+        titleElm.className = 'sectionTitle';
+        titleElm.textContent = toolName === 'THEMES' ? 'THEMES' : toolName.replace('LineTool', '');
+        panel.appendChild(titleElm);
 
-        const ul = document.createElement('ul');
-        ul.name = toolName;
-        itemsDiv.appendChild(ul);
+        const el = document.createElement('section');
+        el.setAttribute('data-tool', toolName);
+        panel.appendChild(el);
     });
 
-
     function updateProgressBar(percent) {
-        if (percent>=0) progressBar.value = percent;
+        if (percent >= 0) progressBar.value = percent;
         else progressBar.removeAttribute('value');
     }
 
@@ -160,30 +170,20 @@
         statusMessage.innerHTML = message;
     }
 
-    function getCheckboxes() {
-        return Object.fromEntries(Array.from(itemsDiv.querySelectorAll('input[type="checkbox"]')).map(c => [c.value, c.checked]));
-    }
-
-    function getCheckedTools() {
-        return Array.from(itemsDiv.querySelectorAll('input[type="checkbox"]:checked')).filter(c=>c.value.includes('Tool')).map(c => c.value);
+    function getCheckedTemplates() {
+        const checkboxes = Array.from(panel.querySelectorAll('input[type="checkbox"]:checked'));
+        return checkboxes.map(c => ({ tool: c.dataset.tool, template: c.value }));
     }
 
     async function fetchSettings() {
 
-        const checkboxes = getCheckboxes();
-        if (checkboxes.THEMES) await fetchThemes();
-        else userData.THEMES = {};
+        updateStatusMessage('Fetching themes...');
+        await fetchThemes();
 
-        const checkedTools = getCheckedTools();
-
-        try {
-            updateProgressBar(-1);
-            updateStatusMessage('Fetching templates...');
-
-            for (let i = 0; i < checkedTools.length; i++) {
-                const tool = checkedTools[i];
-
-                updateStatusMessage(`Fetching ${tool} tool...`);
+        for (let i = 0; i < TOOL_TYPES.length; i++) {
+            const tool = TOOL_TYPES[i];
+            updateStatusMessage(`Fetching ${tool} templates...`);
+            try {
                 const response = await fetch(`https://www.tradingview.com/drawing-templates/${tool}/`, {
                     method: "GET",
                     credentials: "include"
@@ -191,9 +191,9 @@
                 const templateNames = await response.json();
                 userData.TOOLS[tool] = {};
 
-                for (let j = 0; j<templateNames.length; j++) {
+                for (let j = 0; j < templateNames.length; j++) {
                     const name = templateNames[j];
-                    updateStatusMessage(`(${j+1} / ${templateNames.length}) Fetching ${tool} tool template "${name}"...`);
+                    updateStatusMessage(`(${j+1} / ${templateNames.length}) Fetching ${tool} template "${name}"...`);
                     const templateResponse = await fetch(`https://www.tradingview.com/drawing-template/${tool}/?templateName=${encodeURIComponent(name)}`, {
                         method: "GET",
                         credentials: "include"
@@ -202,42 +202,58 @@
                         const templateContent = await templateResponse.json();
                         userData.TOOLS[tool][name] = JSON.parse(templateContent.content);
                     } catch(err) {
-                        throw `Error parsing ${tool} tool template "${name}"! ` + err;
+                        throw `Error parsing ${tool} template "${name}"! ` + err;
                     }
                 }
 
-                // Display tools and templates
-                const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === tool);
+                const ul = panel.querySelector(`section[data-tool="${tool}"]`);
                 ul.innerHTML = '';
                 for (const name in userData.TOOLS[tool]) {
-                    const li = document.createElement('li');
-                    li.textContent = name;
+                    const li = document.createElement('label');
+                    li.innerHTML = `<input type="checkbox" data-tool="${tool}" value="${name}" checked /> ${name}`;
                     ul.appendChild(li);
                 }
 
-                updateProgressBar(((i + 1) / checkedTools.length) * 100);
-
+                updateProgressBar(((i + 1) / TOOL_TYPES.length) * 100);
                 await new Promise((r) => setTimeout(r, 10));
+            } catch (error) {
+                console.error('Error fetching data for tool:', tool, error);
+                updateStatusMessage('Failed to fetch data.');
             }
-
-            updateStatusMessage('Settings successfully fetched!');
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            updateStatusMessage('Failed to fetch data.');
         }
+        updateStatusMessage('Settings successfully fetched!');
     }
-
 
     async function applySettings() {
 
-        const checkboxes = await getCheckboxes();
-        if (checkboxes.THEMES) {
-            await saveThemes();
+        const checkedTemplates = getCheckedTemplates();
+        // Group templates by tool
+        const templatesByTool = {};
+        checkedTemplates.forEach(({ tool, template }) => {
+            if (!templatesByTool[tool]) templatesByTool[tool] = [];
+            templatesByTool[tool].push(template);
+        });
+
+        // Apply themes
+        if (templatesByTool["THEMES"] && Object.keys(userData.THEMES).length > 0) {
+            for (let i = 0; i < templatesByTool["THEMES"].length; i++) {
+                const theme = templatesByTool["THEMES"][i];
+                updateStatusMessage(`Applying theme "${theme}"...`);
+                const formData = new FormData();
+                formData.append('name', theme);
+                formData.append('content', JSON.stringify(userData.THEMES[theme]));
+                await fetch("https://www.tradingview.com/save-theme/", {
+                    method: "POST",
+                    credentials: "include",
+                    body: formData,
+                });
+            }
         }
 
-        const checkedTools = getCheckedTools();
-        if (checkedTools.length === 0) {
-            alert('Please select at least one tool to restore!');
+        // Apply tool templates
+        const toolKeys = Object.keys(templatesByTool).filter(tool => tool !== "THEMES");
+        if (toolKeys.length === 0) {
+            alert('Please select at least one template to restore!');
             return;
         }
 
@@ -245,15 +261,14 @@
             updateProgressBar(-1);
             updateStatusMessage('Restoring templates...');
 
-            for (let i = 0; i < checkedTools.length; i++) {
-                const tool = checkedTools[i];
-                const templates = userData.TOOLS[tool];
-                const templateKeys = Object.keys(templates || {});
-                if (templateKeys.length > 0) {
-                    for (let j = 0; j<templateKeys.length; j++) {
-                        const name = templateKeys[j];
-                        updateStatusMessage(`(${j+1} / ${templateKeys.length}) Applying ${tool} tool template "${name}"...`);
-                        const content = templates[name];
+            for (let i = 0; i < toolKeys.length; i++) {
+                const tool = toolKeys[i];
+                const templateNames = templatesByTool[tool];
+                if (templateNames.length > 0) {
+                    for (let j = 0; j < templateNames.length; j++) {
+                        const name = templateNames[j];
+                        updateStatusMessage(`(${j+1} / ${templateNames.length}) Applying ${tool} template "${name}"...`);
+                        const content = userData.TOOLS[tool][name];
                         const formData = new FormData();
                         formData.append('name', name);
                         formData.append('tool', tool);
@@ -265,9 +280,9 @@
                         });
                     }
                 } else { 
-                    updateStatusMessage(`Tool ${tool} has no templates. Skipping...`);
+                    updateStatusMessage(`Tool ${tool} has no selected templates. Skipping...`);
                 }
-                updateProgressBar(((i + 1) / checkedTools.length) * 100);
+                updateProgressBar(((i + 1) / toolKeys.length) * 100);
             }
 
             updateStatusMessage('Templates restored successfully!');
@@ -276,7 +291,6 @@
             updateStatusMessage('Failed to restore templates.');
         }
     }
-
 
     async function fetchThemes() {
         try {
@@ -288,8 +302,8 @@
             const themeNames = await response.json();
             userData.THEMES = {};
 
-            const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === 'THEMES');
-            ul.innerHTML = '';
+            const list = panel.querySelector(`section[data-tool="THEMES"]`);
+            list.innerHTML = '';
 
             for (const theme of themeNames) {
                 updateStatusMessage(`Fetching theme: ${theme}...`);
@@ -300,38 +314,15 @@
                 const themeContent = await themeResponse.json();
                 userData.THEMES[theme] = JSON.parse(themeContent.content);
                 
-                // display on the list
-                const li = document.createElement('li');
-                li.textContent = theme;
-                ul.appendChild(li);
+                const item = document.createElement('label');
+                item.innerHTML = `<input type="checkbox" data-tool="THEMES" value="${theme}" checked /> ${theme}`;
+                list.appendChild(item);
             }
 
             updateStatusMessage('Themes fetched successfully!');
         } catch (error) {
             console.error('Error fetching themes:', error);
             updateStatusMessage('Failed to fetch themes.');
-        }
-    }
-
-    async function saveThemes() {
-        try {
-            const themes = userData.THEMES;
-            for (const theme in themes) {
-                updateStatusMessage(`Saving theme: ${theme}...`);
-                const formData = new FormData();
-                formData.append('name', theme);
-                formData.append('content', JSON.stringify(themes[theme]));
-                await fetch("https://www.tradingview.com/save-theme/", {
-                    method: "POST",
-                    credentials: "include",
-                    body: formData
-                });
-            }
-
-            updateStatusMessage('Themes saved successfully!');
-        } catch (error) {
-            console.error('Error saving themes:', error);
-            updateStatusMessage('Failed to save themes.');
         }
     }
 
@@ -342,7 +333,6 @@
             username = initData.metaInfo.username;
         } catch(_){}
 
-        const checkedTools = getCheckedTools();
         const exportData = {
             _: {
                 INFO: "This file was generated by https://github.com/victornpb/tradingview-backup check for more info",
@@ -353,22 +343,24 @@
             TOOLS: {},
         };
 
-        const checkboxes = getCheckboxes();
-        if (checkboxes.THEMES){
-            exportData.THEMES = userData.THEMES;
-        }
-
-
-        for (const tool of checkedTools) {
-            if (userData.TOOLS[tool]) {
-                exportData.TOOLS[tool] = userData.TOOLS[tool];
-            }
-        }
-
-        if (Object.keys(exportData).length === 0) {
-            alert('No templates to export. Fetch templates first.');
+        const checkedTemplates = getCheckedTemplates();
+        if (checkedTemplates.length === 0) {
+            alert('No templates selected to export. Fetch templates first.');
             return;
         }
+
+        checkedTemplates.forEach(({ tool, template }) => {
+            if (tool === "THEMES") {
+                if (userData.THEMES && userData.THEMES[template]) {
+                    exportData.THEMES[template] = userData.THEMES[template];
+                }
+            } else {
+                if (userData.TOOLS[tool] && userData.TOOLS[tool][template]) {
+                    if (!exportData.TOOLS[tool]) exportData.TOOLS[tool] = {};
+                    exportData.TOOLS[tool][template] = userData.TOOLS[tool][template];
+                }
+            }
+        });
 
         let filename = `tradingview_${username} (${new Date().toISOString()}).backup.json`;
         filename = filename.replace(/[^a-z0-9-_\.() ]/g,'_').replace(/__/g,'_');
@@ -392,25 +384,27 @@
                 const importedData = JSON.parse(e.target.result);
                 Object.assign(userData, importedData);
 
-                const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === 'THEMES');
-                ul.innerHTML = '';
+                const listThemes = panel.querySelector(`section[data-tool="THEMES"]`);
+                listThemes.innerHTML = '';
                 for (const name in importedData.THEMES) {
-                    const li = document.createElement('li');
-                    li.textContent = name;
-                    ul.appendChild(li);
+                    const item = document.createElement('label');
+                    item.innerHTML = `<input type="checkbox" data-tool="THEMES" value="${name}" checked /> ${name}`;
+                    listThemes.appendChild(item);
                 }
 
                 for (const tool in importedData.TOOLS) {
-                    const ul = [...itemsDiv.querySelectorAll('ul')].find(ul => ul.name === tool);
-                    ul.innerHTML = '';
-                    for (const name in importedData.TOOLS[tool]) {
-                        const li = document.createElement('li');
-                        li.textContent = name;
-                        ul.appendChild(li);
+                    const list = panel.querySelector(`section[data-tool="${tool}"]`);
+                    if (list) {
+                        list.innerHTML = '';
+                        for (const name in importedData.TOOLS[tool]) {
+                            const item = document.createElement('label');
+                            item.innerHTML = `<input type="checkbox" data-tool="${tool}" value="${name}" checked /> ${name}`;
+                            list.appendChild(item);
+                        }
                     }
                 }
 
-                updateStatusMessage('Settings imported successfully!\n Click Apply settings to TradingView.');
+                updateStatusMessage('Settings imported successfully!<br>Click Apply settings to TradingView.');
             } catch (error) {
                 console.error('Error importing templates:', error);
                 updateStatusMessage('Failed to import templates. Please check the file format.');
@@ -425,10 +419,10 @@
     document.getElementById('importFile').addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', importFile);
     document.getElementById('selectAll').addEventListener('click', () => {
-        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+        panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
     });
     document.getElementById('unselectAll').addEventListener('click', () => {
-        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+        panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     });
     updateStatusMessage('<i>Click Fetch or Import a file</i>');
 })();
