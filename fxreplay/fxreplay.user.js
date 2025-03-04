@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         FXReplay Templates & Theme Restore Manager
 // @namespace    https://github.com/victornpb/
-// @version      1.5
+// @version      1.2
 // @description  Transfer drawing templates and theme from TradingView backup to FXReplay with a modern UI
 // @author       Victor
 // @match        https://app.fxreplay.com/*/auth/chart/*
@@ -13,28 +13,33 @@
     // Append UI styles (mirroring TradingView Backup/Restore Manager)
     const style = document.createElement('style');
     style.innerHTML = `
-        #restoreManagerUI {
+        #tvfxrMigrationToolUI {
             position: fixed;
             bottom: 62px;
             left: 64px;
-            background: #1e222d;
+            width: 500px;
             padding: 15px;
+            background: #1e222d;
+            color: #ffffff;
             border: 1px solid #363a45;
+            font-family: Arial, sans-serif;
             border-radius: 3px;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
             z-index: 10000;
-            width: 500px;
-            color: #ffffff;
         }
-        #restoreManagerUI h3 {
+        #tvfxrMigrationToolUI h3 {
             color: #2962ff;
             margin: 0 0 10px 0;
             font-size: 16px;
         }
-        #restoreManagerUI h2 {
+        #tvfxrMigrationToolUI h2 {
+            font-size: 1.3em;
             margin: 0 0 10px 0;
         }
-        #restoreManagerUI button {
+        #tvfxrMigrationToolUI a {
+            color: #2962ff;
+        }
+        #tvfxrMigrationToolUI button {
             display: block;
             width: 100%;
             margin-bottom: 10px;
@@ -45,31 +50,40 @@
             cursor: pointer;
             border: 1px solid grey;
         }
-        #restoreManagerUI button:hover {
+        #tvfxrMigrationToolUI button:hover {
             background-color: #434651;
         }
-        #itemsDiv label {
+        #tvfxrMigrationToolUI #panel label {
             display: block;
-            font-weight: bold;
+            font-weight: normal;
+            font-size: 10pt;
         }
-        #itemsDiv {
+        #tvfxrMigrationToolUI #panel label:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        #tvfxrMigrationToolUI #panel {
             height: 405px;
             overflow-y: auto;
             margin-top: 10px;
             border-top: 1px solid #ccc;
-            padding: 4px;
+            padding: 4px 16px;
             border: 2px inset #b2b5be;
             resize: auto;
         }
-         #itemsDiv li {
-            margin-left: 32px;
-         }   
-        #progressBar {
+        #tvfxrMigrationToolUI #panel .sectionTitle {
+            font-size: medium;
+            font-weight: bold;
+            color: silver;
+        }
+        #tvfxrMigrationToolUI section {
+            padding: 8px;
+        }
+        #tvfxrMigrationToolUI #progressBar {
             margin: 10px 0;
             height: 20px;
             width: 100%;
         }
-        #statusMessage {
+        #tvfxrMigrationToolUI #statusMessage {
             text-align: center;
             margin-top: 5px;
         }
@@ -78,9 +92,9 @@
 
     // Create UI
     const ui = document.createElement('div');
-    ui.id = 'restoreManagerUI';
+    ui.id = 'tvfxrMigrationToolUI';
     ui.innerHTML = `
-        <h3>TV 2 FXReplay Migration</h3>
+        <h3>TV 2 FXReplay Migration Tool</h3>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h2>Import Backup</h2>
@@ -95,10 +109,10 @@
         <div id="statusMessage"><i>Click Import Backup File</i></div>
         <progress id="progressBar" value="0" min="0" max="100"></progress>
         <div>
-            Select items to restore:
+            Select items to migrate:
             <a id="selectAll" href="#">Select All</a> | <a id="unselectAll" href="#">Unselect All</a>
         </div>
-        <div id="itemsDiv"></div>
+        <div id="panel"></div>
     `;
     document.body.appendChild(ui);
 
@@ -108,7 +122,7 @@
     // UI element references
     const statusMessage = document.getElementById('statusMessage');
     const progressBar = document.getElementById('progressBar');
-    const itemsDiv = document.getElementById('itemsDiv');
+    const panel = document.getElementById('panel');
 
     // Helper functions
     function updateProgressBar(percent) {
@@ -120,41 +134,49 @@
         statusMessage.innerHTML = message;
     }
 
-    function getCheckboxes() {
-        return Object.fromEntries(Array.from(itemsDiv.querySelectorAll('input[type="checkbox"]')).map(c => [c.value, c.checked]));
+    // Get all checked templates as an array of objects with tool and template names
+    function getCheckedTemplates() {
+        const checkboxes = Array.from(panel.querySelectorAll('input[type="checkbox"]:checked'));
+        return checkboxes.map(c => ({ tool: c.dataset.tool, template: c.value }));
     }
 
-    // Populate itemsDiv with checkboxes based on imported backup data
+    // Populate panel with individual checkboxes for each backup item
     function populateItems() {
-        itemsDiv.innerHTML = '';
-        // THEMES
+        panel.innerHTML = '';
+        
+        // THEMES section
         if (backupData.THEMES && Object.keys(backupData.THEMES).length > 0) {
-            const labelElm = document.createElement('label');
-            labelElm.innerHTML = `<input type="checkbox" value="THEMES" checked /> THEMES`;
-            itemsDiv.appendChild(labelElm);
-            const ul = document.createElement('ul');
-            ul.setAttribute('name', 'THEMES');
+            const titleElm = document.createElement('div');
+            titleElm.className = 'sectionTitle';
+            titleElm.textContent = 'THEMES';
+            panel.appendChild(titleElm);
+            
+            const section = document.createElement('section');
+            section.setAttribute('data-tool', 'THEMES');
             for (const themeName in backupData.THEMES) {
-                const li = document.createElement('li');
-                li.textContent = themeName;
-                ul.appendChild(li);
+                const labelElm = document.createElement('label');
+                labelElm.innerHTML = `<input type="checkbox" data-tool="THEMES" value="${themeName}" checked /> ${themeName}`;
+                section.appendChild(labelElm);
             }
-            itemsDiv.appendChild(ul);
+            panel.appendChild(section);
         }
-        // TOOLS
+
+        // TOOLS section
         if (backupData.TOOLS && Object.keys(backupData.TOOLS).length > 0) {
             for (const tool in backupData.TOOLS) {
-                const labelElm = document.createElement('label');
-                labelElm.innerHTML = `<input type="checkbox" value="${tool}" checked /> ${tool}`;
-                itemsDiv.appendChild(labelElm);
-                const ul = document.createElement('ul');
-                ul.setAttribute('name', tool);
+                const titleElm = document.createElement('div');
+                titleElm.className = 'sectionTitle';
+                titleElm.textContent = tool;
+                panel.appendChild(titleElm);
+                
+                const section = document.createElement('section');
+                section.setAttribute('data-tool', tool);
                 for (const templateName in backupData.TOOLS[tool]) {
-                    const li = document.createElement('li');
-                    li.textContent = templateName;
-                    ul.appendChild(li);
+                    const labelElm = document.createElement('label');
+                    labelElm.innerHTML = `<input type="checkbox" data-tool="${tool}" value="${templateName}" checked /> ${templateName}`;
+                    section.appendChild(labelElm);
                 }
-                itemsDiv.appendChild(ul);
+                panel.appendChild(section);
             }
         }
     }
@@ -162,11 +184,11 @@
     // Select/Unselect all handlers
     document.getElementById('selectAll').addEventListener('click', (e) => {
         e.preventDefault();
-        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+        panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
     });
     document.getElementById('unselectAll').addEventListener('click', (e) => {
         e.preventDefault();
-        itemsDiv.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+        panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     });
 
     // Import Backup File
@@ -236,23 +258,28 @@
             alert('Please import a backup file.');
             return;
         }
-        const checkboxes = getCheckboxes();
+        
+        const checkedTemplates = getCheckedTemplates();
 
         // Restore THEMES if selected
-        if (checkboxes.THEMES && backupData.THEMES && Object.keys(backupData.THEMES).length > 0) {
-            const themeName = Object.keys(backupData.THEMES)[0];
-            const theme = backupData.THEMES[themeName];
-            updateStatus(`Restoring theme "${themeName}"...`);
-            if (theme.chartProperties) {
-                localStorage.setItem("tradingview.chartproperties", JSON.stringify(theme.chartProperties));
-            }
-            if (theme.mainSourceProperties) {
-                localStorage.setItem("tradingview.chartproperties.mainSeriesProperties", JSON.stringify(theme.mainSourceProperties));
+        const selectedThemes = checkedTemplates.filter(item => item.tool === "THEMES");
+        if (selectedThemes.length > 0 && backupData.THEMES) {
+            for (const { template: themeName } of selectedThemes) {
+                const theme = backupData.THEMES[themeName];
+                updateStatus(`Restoring theme "${themeName}"...`);
+                if (theme.chartProperties) {
+                    localStorage.setItem("tradingview.chartproperties", JSON.stringify(theme.chartProperties));
+                }
+                if (theme.mainSourceProperties) {
+                    localStorage.setItem("tradingview.chartproperties.mainSeriesProperties", JSON.stringify(theme.mainSourceProperties));
+                }
+                await new Promise(r => setTimeout(r, 50));
             }
         }
 
         // Restore TOOLS templates if selected
-        if (backupData.TOOLS && Object.keys(backupData.TOOLS).length > 0) {
+        const selectedTools = checkedTemplates.filter(item => item.tool !== "THEMES");
+        if (selectedTools.length > 0 && backupData.TOOLS) {
             const userId = localStorage.getItem('apc_user_id');
             if (!userId) {
                 updateStatus('User ID not found in localStorage.');
@@ -265,46 +292,33 @@
                 return;
             }
             const authHeader = "Bearer " + token;
-
-            // Count total templates for progress
-            let totalTemplates = 0;
-            for (const tool in backupData.TOOLS) {
-                if (checkboxes[tool]) {
-                    totalTemplates += Object.keys(backupData.TOOLS[tool]).length;
-                }
-            }
+            let totalTemplates = selectedTools.length;
             let restoredCount = 0;
-
-            for (const tool in backupData.TOOLS) {
-                if (checkboxes[tool]) {
-                    const templates = backupData.TOOLS[tool];
-                    for (const templateName in templates) {
-                        const content = templates[templateName];
-                        updateStatus(`Restoring ${tool} template "${templateName}"...`);
-                        const formData = new FormData();
-                        formData.append('content', JSON.stringify(content));
-                        const endpoint = `https://awf.fxreplay.com/chart-storage/2/drawing_templates?client=fxreplay.com&user=${encodeURIComponent(userId)}&tool=${encodeURIComponent(tool)}&name=${encodeURIComponent(templateName)}`;
-                        try {
-                            await fetch(endpoint, {
-                                method: 'POST',
-                                credentials: 'include',
-                                headers: {
-                                    'Authorization': authHeader,
-                                    'accept': 'application/json'
-                                },
-                                body: formData
-                            });
-                        } catch (err) {
-                            console.error(`Error restoring ${tool} template "${templateName}":`, err);
-                            updateStatus(`Error restoring ${tool} template "${templateName}". See console.`);
-                        }
-                        restoredCount++;
-                        updateProgressBar((restoredCount / totalTemplates) * 100);
-                        await new Promise(r => setTimeout(r, 100));
-                    }
+            for (const { tool, template } of selectedTools) {
+                const content = backupData.TOOLS[tool][template];
+                updateStatus(`Restoring ${tool} template "${template}"...`);
+                const formData = new FormData();
+                formData.append('content', JSON.stringify(content));
+                const endpoint = `https://awf.fxreplay.com/chart-storage/2/drawing_templates?client=fxreplay.com&user=${encodeURIComponent(userId)}&tool=${encodeURIComponent(tool)}&name=${encodeURIComponent(template)}`;
+                try {
+                    await fetch(endpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Authorization': authHeader,
+                            'accept': 'application/json'
+                        },
+                        body: formData
+                    });
+                } catch (err) {
+                    console.error(`Error restoring ${tool} template "${template}":`, err);
+                    updateStatus(`Error restoring ${tool} template "${template}". See console.`);
                 }
+                restoredCount++;
+                updateProgressBar((restoredCount / totalTemplates) * 100);
+                await new Promise(r => setTimeout(r, 100));
             }
         }
-        updateStatus('Templates and theme restored successfully.');
+        updateStatus('Templates and theme restored successfully! Refresh your window now');
     });
 })();
