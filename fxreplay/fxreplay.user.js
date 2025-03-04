@@ -22,7 +22,7 @@
             background: #1e222d;
             color: #ffffff;
             border: 1px solid #363a45;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif;
             border-radius: 3px;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
             z-index: 10000;
@@ -44,14 +44,18 @@
             width: 100%;
             margin-bottom: 10px;
             padding: 8px;
-            font-size: 14px;
-            border: none;
+            font-size: 16px;
+            color: #000;
+            background: #fff;
+            border: 1px solid #fff;
             border-radius: 5px;
             cursor: pointer;
-            border: 1px solid grey;
         }
         #tvfxrMigrationToolUI button:hover {
-            background-color: #434651;
+            background-color: #ddd;
+        }
+        #tvfxrMigrationToolUI button:active {
+            background-color: #888;
         }
         #tvfxrMigrationToolUI #panel label {
             display: block;
@@ -77,6 +81,13 @@
         }
         #tvfxrMigrationToolUI section {
             padding: 8px;
+        }
+        #tvBackupToolUI section:empty:after {
+            content: 'Empty';
+            opacity: 0.25;
+            display: block;
+            font-style: italic;
+            font-size: 8pt;
         }
         #tvfxrMigrationToolUI #progressBar {
             margin: 10px 0;
@@ -319,6 +330,6 @@
                 await new Promise(r => setTimeout(r, 100));
             }
         }
-        updateStatus('Templates and theme restored successfully! Refresh your window now');
+        updateStatus('Templates and theme restored successfully!<br>Refresh the page to see the changes.');
     });
 })();
