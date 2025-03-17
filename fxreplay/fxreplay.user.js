@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         FXReplay Templates & Theme Restore Manager
+// @name         TV2FXReplay
+// @description  Transfer drawing templates and theme from TradingView backup to FXReplay
+// @author       Victor
 // @namespace    https://github.com/victornpb/
 // @version      1.2
-// @description  Transfer drawing templates and theme from TradingView backup to FXReplay with a modern UI
-// @author       Victor
 // @match        https://app.fxreplay.com/*/auth/chart/*
 // ==/UserScript==
 
@@ -37,6 +37,7 @@
             margin: 0 0 10px 0;
         }
         #tvfxrMigrationToolUI a {
+            cursor: pointer;
             color: #2962ff;
         }
         #tvfxrMigrationToolUI button {
@@ -209,19 +210,20 @@
 
     document.getElementById('importFileInput').addEventListener('change', (event) => {
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) return updateStatus('No files selected');;
         const reader = new FileReader();
         reader.onload = (e) => {
             try {
                 backupData = JSON.parse(e.target.result);
-                updateStatus('Backup file imported successfully.');
                 populateItems();
+                updateStatus('Backup file has been loaded.<br>Select items you want to restora and click "Apply"');
             } catch (err) {
                 console.error('Error parsing backup file:', err);
                 updateStatus('Error parsing backup file.');
             }
         };
         reader.readAsText(file);
+        updateStatus('Loading file...');
     });
 
     // Token search functions
@@ -330,6 +332,6 @@
                 await new Promise(r => setTimeout(r, 100));
             }
         }
-        updateStatus('Templates and theme restored successfully!<br>Refresh the page to see the changes.');
+        updateStatus(`<p style="color:green">Templates and theme restored successfully!</p><br>Click <a onclick="location.reload(true);">Refresh</a> to see the changes.`);
     });
 })();
