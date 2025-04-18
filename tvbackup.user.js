@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TradingView Backup/Restore Manager
 // @namespace    https://github.com/victornpb/tradingview-backup
-// @version      1.2
-// @description  Backup and Restore your TradingView drawing tool templates and Themes with individual template selection
+// @version      1.3
+// @description  Backup and Restore your TradingView drawing tool templates and Themes with individual template selection and toggleable UI
 // @author       Victor
 // @match        https://www.tradingview.com/chart/*
 // ==/UserScript==
@@ -42,8 +42,8 @@
     const styles = `
         #tvBackupToolUI {
             position: fixed;
-            bottom: 62px;
-            left: 64px;
+            bottom: 68px;
+            left: 48px;
             width: 500px;
             padding: 15px;
             background: #1e222d;
@@ -53,6 +53,26 @@
             border-radius: 3px;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
             z-index: 10000;
+        }
+        #tvBackupToolUI.hidden {
+            display: none;
+        }
+        #tvFAB {
+            position: fixed;
+            bottom: 68px;
+            left: 9px;
+            width: 34px;
+            height: 34px;
+            background: #1e222d;
+            border: 1px solid #363a45;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 24px;
+            line-height: 34px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10001;
         }
         #tvBackupToolUI h3 {
             color: #2962ff;
@@ -89,7 +109,7 @@
             border: 2px inset #b2b5be;
             resize: auto;
         }
-        
+
         #tvBackupToolUI #panel label {
             display: block;
             font-weight: normal;
@@ -168,6 +188,22 @@
         </div>
         <div id="panel"></div>
     `;
+
+    // Floating Action Button
+    const STORAGE_KEY = 'tvBackupToolUIVisible';
+    const fab = document.createElement('div');
+    fab.id = 'tvFAB';
+    fab.textContent = '🗄️';
+    fab.addEventListener('click', () => {
+        ui.classList.toggle('hidden');
+        const isVisible = !ui.classList.contains('hidden');
+        localStorage.setItem(STORAGE_KEY, String(isVisible));
+    });
+    document.body.appendChild(fab);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const visible = stored === null ? true : stored === 'true';
+    if (!visible) ui.classList.add('hidden');
+
     document.body.appendChild(ui);
 
     const progressBar = document.getElementById('progressBar');
