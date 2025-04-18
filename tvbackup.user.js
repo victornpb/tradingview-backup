@@ -74,6 +74,22 @@
             cursor: pointer;
             z-index: 10001;
         }
+        #tvFAB.active {
+          border-color: #2962ff;
+        }
+        #tvBackupToolUI #closeUI {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            height: 24px;
+            width: 24px;
+            line-height: 24px;
+            font-size: 24px;
+            background: transparent;
+            border: transparent;
+            color: white;
+            padding: 0;
+        }
         #tvBackupToolUI h3 {
             color: #2962ff;
             margin: 0 0 10px 0;
@@ -167,6 +183,7 @@
     ui.id = 'tvBackupToolUI';
     ui.innerHTML = `
         <h3>TradingView Backup Tool - <small><a href="https://github.com/victornpb">victor</a></small></h3>
+        <button id="closeUI" class="closeBtn" title="Close">×</button>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h2>💾 Backup Settings</h2>
@@ -188,23 +205,34 @@
         </div>
         <div id="panel"></div>
     `;
+    document.body.appendChild(ui);
 
     // Floating Action Button
     const STORAGE_KEY = 'tvBackupToolUIVisible';
     const fab = document.createElement('div');
     fab.id = 'tvFAB';
+    fab.title = 'Toggle Backup Tool UI';
     fab.textContent = '🗄️';
-    fab.addEventListener('click', () => {
-        ui.classList.toggle('hidden');
-        const isVisible = !ui.classList.contains('hidden');
-        localStorage.setItem(STORAGE_KEY, String(isVisible));
-    });
     document.body.appendChild(fab);
     const stored = localStorage.getItem(STORAGE_KEY);
     const visible = stored === null ? true : stored === 'true';
     if (!visible) ui.classList.add('hidden');
+    updateFabIcon();
 
-    document.body.appendChild(ui);
+    function toggleUI() {
+        ui.classList.toggle('hidden');
+        const isVisible = !ui.classList.contains('hidden');
+        localStorage.setItem(STORAGE_KEY, String(isVisible));
+        updateFabIcon();
+    }
+    function updateFabIcon() {
+        fab.classList.toggle('active', !ui.classList.contains('hidden'));
+    }
+
+    fab.addEventListener('click', toggleUI);
+    ui.querySelector('#closeUI').addEventListener('click', toggleUI);
+
+
 
     const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
