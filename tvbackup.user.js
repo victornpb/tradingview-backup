@@ -40,141 +40,30 @@
     ];
 
     const styles = `
-        #tvBackupToolUI {
-            position: fixed;
-            bottom: 68px;
-            left: 48px;
-            width: 500px;
-            padding: 15px;
-            background: #1e222d;
-            color: #ffffff;
-            border: 1px solid #363a45;
-            font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif;
-            border-radius: 3px;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
-            z-index: 10000;
-        }
-        #tvBackupToolUI.hidden {
-            display: none;
-        }
-        #tvFAB {
-            position: fixed;
-            bottom: 68px;
-            left: 9px;
-            width: 34px;
-            height: 34px;
-            background: #1e222d;
-            border: 1px solid #363a45;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            color: #fff;
-            font-size: 24px;
-            line-height: 34px;
-            text-align: center;
-            cursor: pointer;
-            z-index: 10001;
-        }
-        #tvFAB.active {
-          border-color: #2962ff;
-        }
-        #tvBackupToolUI #closeUI {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            height: 24px;
-            width: 24px;
-            line-height: 24px;
-            font-size: 24px;
-            background: transparent;
-            border: transparent;
-            color: white;
-            padding: 0;
-        }
-        #tvBackupToolUI h3 {
-            color: #2962ff;
-            margin: 0 0 10px 0;
-            font-size: 16px;
-        }
-        #tvBackupToolUI h2 {
-            margin: 0 0 10px 0;
-        }
-        #tvBackupToolUI button {
-            display: block;
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 8px;
-            font-size: 16px;
-            color: #000;
-            background: #fff;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #tvBackupToolUI button:hover {
-            background-color: #ddd;
-        }
-        #tvBackupToolUI button:active {
-            background-color: #888;
-        }
-        #tvBackupToolUI #panel {
-            height: 405px;
-            overflow-y: auto;
-            margin-top: 10px;
-            border-top: 1px solid #ccc;
-            padding: 4px 16px;
-            border: 2px inset #b2b5be;
-            resize: auto;
-        }
-
-        #tvBackupToolUI #panel label {
-            display: block;
-            font-weight: normal;
-            font-size: 10pt;
-        }
-        #tvBackupToolUI #panel label:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        #tvBackupToolUI #panel {
-            height: 405px;
-            overflow-y: auto;
-            margin-top: 10px;
-            border-top: 1px solid #ccc;
-            padding: 4px 16px;
-            border: 2px inset #b2b5be;
-            resize: auto;
-        }
-        #tvBackupToolUI #panel .sectionTitle {
-            font-size: medium;
-            font-weight: bold;
-            color: silver;
-        }
-        #tvBackupToolUI section {
-            padding: 8px;
-        }
-        #tvBackupToolUI section:empty:after {
-            content: 'Empty';
-            opacity: 0.25;
-            display: block;
-            font-style: italic;
-            font-size: 8pt;
-        }
-        #tvBackupToolUI #panel label {
-            display: block;
-            font-weight: regular;
-        }
-        #tvBackupToolUI #progressBar {
-            margin: 10px 0;
-            height: 20px;
-            width: 100%;
-        }
-        #tvBackupToolUI #statusMessage {
-            text-align: center;
-            margin-top: 5px;
-        }
+        #tvBackupToolFab { position: fixed; bottom: 68px; left: 9px; width: 34px; height: 34px; background: #1e222d; border: 1px solid #363a45; border-radius: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); color: #fff; font-size: 24px; line-height: 34px; text-align: center; cursor: pointer; z-index: 10001; }
+        #tvBackupToolFab.active { border-color: #2962ff; }
+        #tvBackupToolUI { position: fixed; bottom: 68px; left: 48px; width: 500px; padding: 15px; background: #1e222d; color: #ffffff; border: 1px solid #363a45; font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif; border-radius: 3px; box-shadow: 0 2px 20px rgba(0, 0, 0, 1); z-index: 10000; }
+        #tvBackupToolUI.hidden { display: none; }
+        #tvBackupToolUI #closeUI { position: absolute; right: 10px; top: 10px; height: 24px; width: 24px; line-height: 24px; font-size: 24px; background: transparent; border: transparent; color: white; padding: 0; }
+        #tvBackupToolUI h3 { color: #2962ff; margin: 0 0 10px 0; font-size: 16px; }
+        #tvBackupToolUI h2 { margin: 0 0 10px 0; }
+        #tvBackupToolUI button { display: block; width: 100%; margin-bottom: 10px; padding: 8px; font-size: 16px; color: #000; background: #fff; border: 1px solid #fff; border-radius: 5px; cursor: pointer; }
+        #tvBackupToolUI button:hover { background-color: #ddd; }
+        #tvBackupToolUI button:active { background-color: #888; }
+        #tvBackupToolUI #panel { height: 405px; overflow-y: auto; margin-top: 10px; border-top: 1px solid #ccc; padding: 4px 16px; border: 2px inset #b2b5be; resize: auto; }
+        #tvBackupToolUI #panel label { display: block; font-weight: normal; font-size: 10pt; }
+        #tvBackupToolUI #panel label:hover { background: rgba(255, 255, 255, 0.05); }
+        #tvBackupToolUI #panel .sectionTitle { font-size: medium; font-weight: bold; color: silver; }
+        #tvBackupToolUI section { padding: 8px; }
+        #tvBackupToolUI section:empty:after { content: 'Empty'; opacity: 0.25; display: block; font-style: italic; font-size: 8pt; }
+        #tvBackupToolUI #panel label { display: block; font-weight: regular; }
+        #tvBackupToolUI #progressBar { margin: 10px 0; height: 20px; width: 100%; }
+        #tvBackupToolUI #statusMessage { text-align: center; margin-top: 5px; }
     `;
 
     const styleSheet = document.createElement('style');
     styleSheet.type = 'text/css';
+    styleSheet.id = 'tvBackupToolCSS';
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
 
@@ -207,32 +96,28 @@
     `;
     document.body.appendChild(ui);
 
+    const STORAGE_KEY = 'tvBackupTool';
+    const prefs = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? { lastVisibility: true};
+
     // Floating Action Button
-    const STORAGE_KEY = 'tvBackupToolUIVisible';
     const fab = document.createElement('div');
-    fab.id = 'tvFAB';
-    fab.title = 'Toggle Backup Tool UI';
+    fab.id = 'tvBackupToolFab';
+    fab.title = 'TradingView Backup Tool (Show/Hide)';
     fab.textContent = '🗄️';
     document.body.appendChild(fab);
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const visible = stored === null ? true : stored === 'true';
-    if (!visible) ui.classList.add('hidden');
-    updateFabIcon();
-
+    fab.classList.toggle('active', prefs.lastVisibility);
+    ui.classList.toggle('hidden', !prefs.lastVisibility);
+    
     function toggleUI() {
-        ui.classList.toggle('hidden');
-        const isVisible = !ui.classList.contains('hidden');
-        localStorage.setItem(STORAGE_KEY, String(isVisible));
-        updateFabIcon();
+        const show = ui.classList.contains('hidden');
+        ui.classList.toggle('hidden', !show);
+        fab.classList.toggle('active', show);
+        prefs.lastVisibility = show;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     }
-    function updateFabIcon() {
-        fab.classList.toggle('active', !ui.classList.contains('hidden'));
-    }
-
+    
     fab.addEventListener('click', toggleUI);
     ui.querySelector('#closeUI').addEventListener('click', toggleUI);
-
-
 
     const progressBar = document.getElementById('progressBar');
     const statusMessage = document.getElementById('statusMessage');
@@ -519,4 +404,5 @@
         panel.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     });
     updateStatus('<i>Click Fetch or Import a file</i>');
+    
 })();
