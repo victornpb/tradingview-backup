@@ -375,7 +375,8 @@
                 updateProgressBar(((i + 1) / toolKeys.length) * 100);
             }
 
-            updateStatus('Templates restored successfully!');
+            updateStatus(`<p style="color: lightgreen;">Templates restored successfully!</p>
+                <br>Refresh the page and remember to Apply themes in the chart settings`);
         } catch (error) {
             console.error('Error restoring templates:', error);
             updateStatus('Failed to restore templates.');
@@ -497,7 +498,7 @@
                     }
                 }
 
-                updateStatus('Settings imported successfully!<br>Click Apply settings to TradingView.');
+                updateStatus('Backup file has been loaded and its ready to apply!<br>Click Apply settings to TradingView.');
             } catch (error) {
                 console.error('Error importing templates:', error);
                 updateStatus('Failed to import templates. Please check the file format.');
