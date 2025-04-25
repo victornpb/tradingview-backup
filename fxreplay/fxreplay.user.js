@@ -13,92 +13,25 @@
     // Append UI styles (mirroring TradingView Backup/Restore Manager)
     const style = document.createElement('style');
     style.innerHTML = `
-        #tvfxrMigrationToolUI {
-            position: fixed;
-            bottom: 62px;
-            left: 64px;
-            width: 500px;
-            padding: 15px;
-            background: #1e222d;
-            color: #ffffff;
-            border: 1px solid #363a45;
-            font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif;
-            border-radius: 3px;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 1);
-            z-index: 10000;
-        }
-        #tvfxrMigrationToolUI h3 {
-            color: #2962ff;
-            margin: 0 0 10px 0;
-            font-size: 16px;
-        }
-        #tvfxrMigrationToolUI h2 {
-            font-size: 1.3em;
-            margin: 0 0 10px 0;
-        }
-        #tvfxrMigrationToolUI a {
-            cursor: pointer;
-            color: #2962ff;
-        }
-        #tvfxrMigrationToolUI button {
-            display: block;
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 8px;
-            font-size: 16px;
-            color: #000;
-            background: #fff;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #tvfxrMigrationToolUI button:hover {
-            background-color: #ddd;
-        }
-        #tvfxrMigrationToolUI button:active {
-            background-color: #888;
-        }
-        #tvfxrMigrationToolUI #panel label {
-            display: block;
-            font-weight: normal;
-            font-size: 10pt;
-        }
-        #tvfxrMigrationToolUI #panel label:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        #tvfxrMigrationToolUI #panel {
-            height: 405px;
-            overflow-y: auto;
-            margin-top: 10px;
-            border-top: 1px solid #ccc;
-            padding: 4px 16px;
-            border: 2px inset #b2b5be;
-            resize: auto;
-        }
-        #tvfxrMigrationToolUI #panel .sectionTitle {
-            font-size: medium;
-            font-weight: bold;
-            color: silver;
-        }
-        #tvfxrMigrationToolUI section {
-            padding: 8px;
-        }
-        #tvBackupToolUI section:empty:after {
-            content: 'Empty';
-            opacity: 0.25;
-            display: block;
-            font-style: italic;
-            font-size: 8pt;
-        }
-        #tvfxrMigrationToolUI #progressBar {
-            margin: 10px 0;
-            height: 20px;
-            width: 100%;
-        }
-        #tvfxrMigrationToolUI #statusMessage {
-            text-align: center;
-            margin-top: 5px;
-        }
+        #tvfxrMigrationToolFab { position: fixed; bottom: 110px; left: 9px; width: 34px; height: 34px; background: #1e222d; border: 1px solid #363a45; border-radius: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); color: #fff; font-size: 24px; line-height: 34px; text-align: center; cursor: pointer; z-index: 10001; }
+        #tvfxrMigrationToolFab.active { border-color: #2962ff; }
+        #tvfxrMigrationToolUI { position: fixed; bottom: 62px; left: 64px; width: 500px; padding: 15px; background: #1e222d; color: #ffffff; border: 1px solid #363a45; font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif; border-radius: 3px; box-shadow: 0 2px 20px rgba(0, 0, 0, 1); z-index: 10000; }
+        #tvfxrMigrationToolUI.hidden { display: none; }
+        #tvfxrMigrationToolUI #closeUI { position: absolute; right: 10px; top: 10px; height: 24px; width: 24px; line-height: 24px; font-size: 24px; background: transparent; border: transparent; color: white; padding: 0; }
+        #tvfxrMigrationToolUI h3 { color: #2962ff; margin: 0 0 10px 0; font-size: 16px; }
+        #tvfxrMigrationToolUI h2 { font-size: 1.3em; margin: 0 0 10px 0; }
+        #tvfxrMigrationToolUI a { cursor: pointer; color: #2962ff; }
+        #tvfxrMigrationToolUI button { display: block; width: 100%; margin-bottom: 10px; padding: 8px; font-size: 16px; color: #000; background: #fff; border: 1px solid #fff; border-radius: 5px; cursor: pointer; }
+        #tvfxrMigrationToolUI button:hover { background-color: #ddd; }
+        #tvfxrMigrationToolUI button:active { background-color: #888; }
+        #tvfxrMigrationToolUI #panel label { display: block; font-weight: normal; font-size: 10pt; }
+        #tvfxrMigrationToolUI #panel label:hover { background: rgba(255, 255, 255, 0.05); }
+        #tvfxrMigrationToolUI #panel { height: 405px; overflow-y: auto; margin-top: 10px; border-top: 1px solid #ccc; padding: 4px 16px; border: 2px inset #b2b5be; resize: auto; }
+        #tvfxrMigrationToolUI #panel .sectionTitle { font-size: medium; font-weight: bold; color: silver; }
+        #tvfxrMigrationToolUI section { padding: 8px; }
+        #tvfxrMigrationToolUI section:empty:after { content: 'Empty'; opacity: 0.25; display: block; font-style: italic; font-size: 8pt; }
+        #tvfxrMigrationToolUI #progressBar { margin: 10px 0; height: 20px; width: 100%; }
+        #tvfxrMigrationToolUI #statusMessage { text-align: center; margin-top: 5px; }
     `;
     document.head.appendChild(style);
 
@@ -106,7 +39,8 @@
     const ui = document.createElement('div');
     ui.id = 'tvfxrMigrationToolUI';
     ui.innerHTML = `
-        <h3>TV 2 FXReplay Migration Tool</h3>
+        <h3>TV 2 FXReplay Migration Tool - <small><a href="https://github.com/victornpb">victor</a></small></h3>
+        <button id="closeUI" class="closeBtn" title="Close">×</button>
         <div style="display: flex; justify-content: space-around;">
             <div>
                 <h2>Import Backup</h2>
@@ -127,6 +61,29 @@
         <div id="panel"></div>
     `;
     document.body.appendChild(ui);
+
+    const STORAGE_KEY = 'tvfxrMigrationTool';
+    const prefs = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? { lastVisibility: true};
+
+    // Floating Action Button
+    const fab = document.createElement('div');
+    fab.id = 'tvfxrMigrationToolFab';
+    fab.title = 'TradingView Backup Tool (Show/Hide)';
+    fab.textContent = '🗄️';
+    document.body.appendChild(fab);
+    fab.classList.toggle('active', prefs.lastVisibility);
+    ui.classList.toggle('hidden', !prefs.lastVisibility);
+    
+    function toggleUI() {
+        const show = ui.classList.contains('hidden');
+        ui.classList.toggle('hidden', !show);
+        fab.classList.toggle('active', show);
+        prefs.lastVisibility = show;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    }
+    
+    fab.addEventListener('click', toggleUI);
+    ui.querySelector('#closeUI').addEventListener('click', toggleUI);
 
     // Global backup data
     let backupData = null;
