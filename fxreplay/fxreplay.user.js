@@ -13,7 +13,7 @@
     // Append UI styles (mirroring TradingView Backup/Restore Manager)
     const style = document.createElement('style');
     style.innerHTML = `
-        #tvfxrMigrationToolFab { position: fixed; bottom: 110px; left: 9px; width: 34px; height: 34px; background: #1e222d; border: 1px solid #363a45; border-radius: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); color: #fff; font-size: 24px; line-height: 34px; text-align: center; cursor: pointer; z-index: 10001; }
+        #tvfxrMigrationToolFab { position: fixed; bottom: 170px; left: 9px; width: 34px; height: 34px; background: #1e222d; border: 1px solid #363a45; border-radius: 6px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5); color: #fff; font-size: 24px; line-height: 34px; text-align: center; cursor: pointer; z-index: 10001; }
         #tvfxrMigrationToolFab.active { border-color: #2962ff; }
         #tvfxrMigrationToolUI { position: fixed; bottom: 62px; left: 64px; width: 500px; padding: 15px; background: #1e222d; color: #ffffff; border: 1px solid #363a45; font-family: -apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif; border-radius: 3px; box-shadow: 0 2px 20px rgba(0, 0, 0, 1); z-index: 10000; }
         #tvfxrMigrationToolUI.hidden { display: none; }
